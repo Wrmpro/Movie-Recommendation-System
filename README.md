@@ -1,6 +1,6 @@
 # 🎬 Movie Recommendation System
 
-A simple mini project that recommends movies using:
+Major project that recommends movies using:
 - Content-Based Filtering (by genres)
 - Collaborative Filtering (user-based k-NN)
 
