@@ -8,7 +8,11 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import urllib3
 
-ML_SMALL_URL = "https://files.grouplens.org/datasets/movielens/ml-latest-small.zip"
+# Allow overriding the ZIP URL via environment variable (e.g., in deployment settings)
+ML_SMALL_URL = os.getenv(
+    "MOVIELENS_ZIP_URL",
+    "https://files.grouplens.org/datasets/movielens/ml-latest-small.zip",
+)
 ML_SMALL_DIRNAME = "ml-latest-small"
 
 def _download_with_retry(url: str, timeout: int = 60) -> bytes:
@@ -18,34 +22,53 @@ def _download_with_retry(url: str, timeout: int = 60) -> bytes:
         total=3,
         backoff_factor=1,
         status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=frozenset(["GET"]),
+        raise_on_status=False,
     )
     adapter = HTTPAdapter(max_retries=retry_strategy)
-    
+
     session = requests.Session()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
-    
-    # Try with SSL verification first
-    try:
-        resp = session.get(url, timeout=timeout, verify=True)
+
+    headers = {
+        # Some hosts are picky about missing UA; provide a standard UA
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+    }
+
+    # Respect an env override to disable SSL verification (as last resort)
+    verify_pref = os.getenv("MOVIELENS_VERIFY_SSL", "true").lower() not in ("0", "false", "no")
+    timeout_pref = int(os.getenv("MOVIELENS_TIMEOUT", str(timeout)))
+
+    def _try_request(verify_flag: bool) -> bytes:
+        resp = session.get(url, timeout=timeout_pref, verify=verify_flag, headers=headers)
         resp.raise_for_status()
         return resp.content
+
+    # Try with SSL verification first (unless explicitly disabled)
+    try:
+        content = _try_request(verify_pref)
+        return content
     except (requests.exceptions.SSLError, requests.exceptions.ConnectionError) as e:
         print(f"Network/SSL error encountered: {e}")
         print("Retrying with SSL verification disabled...")
-        
-        # Fallback: disable SSL verification for problematic environments
         try:
             # Suppress SSL warnings when bypassing verification
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-            resp = session.get(url, timeout=timeout, verify=False)
-            resp.raise_for_status()
-            return resp.content
+            content = _try_request(False)
+            return content
         except Exception as fallback_error:
-            raise RuntimeError(f"Failed to download data from {url}. "
-                             f"Original error: {e}. "
-                             f"Fallback error: {fallback_error}. "
-                             f"Please check your internet connection or download the data manually.") from fallback_error
+            raise RuntimeError(
+                f"Failed to download data from {url}. "
+                f"Original error: {e}. "
+                f"Fallback error: {fallback_error}. "
+                f"Please check your internet connection or download the data manually."
+            ) from fallback_error
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to download data from {url}. Error: {e}"
+        ) from e
 
 def ensure_movielens_data(data_dir: str = "data") -> None:
     os.makedirs(data_dir, exist_ok=True)
@@ -83,7 +106,7 @@ def ensure_movielens_data(data_dir: str = "data") -> None:
         # Remove corrupted zip file so it can be re-downloaded
         if os.path.exists(zip_path):
             os.remove(zip_path)
-        raise RuntimeError(f"Downloaded file appears to be corrupted. Please try again.") from e
+        raise RuntimeError("Downloaded file appears to be corrupted. Please try again.") from e
 
 def load_movielens(data_dir: str = "data"):
     base = os.path.join(data_dir, ML_SMALL_DIRNAME)
