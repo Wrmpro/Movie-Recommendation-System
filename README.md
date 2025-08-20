@@ -77,7 +77,7 @@ The app will:
 ---
 ## 🌐 Live Demo
 
-👉 [Try the Streamlit App](https://your-app-link.streamlit.app)
+👉 [Try the Streamlit App](https://movie-recommendation-system-cbf.streamlit.app/)
 
 ---
 ## 📦 Dataset
