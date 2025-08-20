@@ -98,6 +98,30 @@ You can adjust:
 - Evaluation scripts (precision@k, MAP, NDCG)
 - Dockerfile for containerized runs
 
+## 🛠️ Troubleshooting
+
+### Dataset Download Issues (SSL/Network Errors)
+
+If you encounter SSL or network errors when the app tries to download the MovieLens dataset, this is typically due to TLS/certificate issues in hosting environments (like Streamlit Cloud). Here are the solutions:
+
+#### Environment Variables
+You can set these environment variables to resolve issues:
+
+- **`MOVIELENS_VERIFY_SSL=false`** - Bypasses TLS verification for the dataset download (use only if needed)
+- **`MOVIELENS_ZIP_URL`** - Override the dataset URL if the default is blocked
+- **`MOVIELENS_TIMEOUT`** - Adjust network timeout (default: 60 seconds)
+
+#### Manual Upload Fallback
+If automatic download fails, the app provides a manual upload option:
+1. Download `ml-latest-small.zip` from [GroupLens](https://files.grouplens.org/datasets/movielens/ml-latest-small.zip)
+2. Use the file uploader in the app's error screen
+3. Click "Reload data" after upload
+
+#### Permanent Fix
+To avoid download issues entirely, commit the dataset to your repository:
+1. Download and extract the dataset locally
+2. Commit the `data/ml-latest-small/` directory to your repository
+3. The app will detect existing data and skip downloading
 
 ## 📄 License
 

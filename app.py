@@ -70,7 +70,7 @@ def main():
         default_title = "Toy Story (1995)" if "Toy Story (1995)" in movie_list else (movie_list[0] if movie_list else "")
         default_index = movie_list.index(default_title) if default_title in movie_list else 0
         selected_title = st.selectbox("Pick a movie:", movie_list, index=default_index)
-        top_n = st.slider("Number of recommendations:", min_value=5, max_value=20, value=10, step=1)
+        top_n = st.slider("Number of recommendations:", min_value=5, max_value=20, value=10, step=1, key="content_top_n")
 
         if st.button("Recommend (Content-Based)"):
             t1 = time.perf_counter()
@@ -89,7 +89,7 @@ def main():
         user_ids.sort()
         default_user = user_ids[0] if user_ids else 1
         user_id = st.number_input("User ID", min_value=int(min(user_ids)), max_value=int(max(user_ids)), value=int(default_user), step=1)
-        top_n_cf = st.slider("Number of recommendations:", min_value=5, max_value=20, value=10, step=1)
+        top_n_cf = st.slider("Number of recommendations:", min_value=5, max_value=20, value=10, step=1, key="cf_top_n")
         k_neighbors = st.slider("Neighbors (k)", min_value=10, max_value=100, value=40, step=5)
 
         if st.button("Recommend (Collaborative Filtering)"):
