@@ -1,5 +1,6 @@
 import os
 import time
+import zipfile
 import streamlit as st
 import pandas as pd
 
@@ -32,7 +33,33 @@ def main():
     data_dir = "data"
     t0 = time.perf_counter()
     with st.spinner("Loading data..."):
-        movies_df, ratings_df = _load_data(data_dir)
+        try:
+            movies_df, ratings_df = _load_data(data_dir)
+        except Exception as e:
+            st.error("Automatic download of the MovieLens dataset failed due to a network/SSL issue.")
+            with st.expander("Details"):
+                st.code(str(e))
+            st.info(
+                "Option A: Upload the dataset zip (ml-latest-small.zip) below.\n"
+                "Option B: Commit the dataset to the repository under data/ml-latest-small/.\n"
+                "Option C: Set environment variable MOVIELENS_VERIFY_SSL=false (not always available on hosted platforms)."
+            )
+            uploaded = st.file_uploader("Upload ml-latest-small.zip", type=["zip"])
+            if uploaded is not None:
+                os.makedirs(data_dir, exist_ok=True)
+                zip_path = os.path.join(data_dir, "ml-latest-small.zip")
+                with open(zip_path, "wb") as f:
+                    f.write(uploaded.read())
+                try:
+                    with zipfile.ZipFile(zip_path, "r") as zf:
+                        zf.extractall(path=data_dir)
+                    st.success("Data uploaded and extracted. Click 'Reload data' to continue.")
+                    if st.button("Reload data"):
+                        st.cache_data.clear()
+                        st.rerun()
+                except zipfile.BadZipFile:
+                    st.error("The uploaded file is not a valid zip. Please upload ml-latest-small.zip from GroupLens.")
+            st.stop()
     st.caption(f"Data loaded in {time.perf_counter() - t0:.2f}s")
 
     tabs = st.tabs(["Content-Based (Genres)", "Collaborative Filtering (User-Based)", "About"])
@@ -41,7 +68,8 @@ def main():
         st.subheader("Find similar movies by genre")
         movie_list = movies_df["title"].dropna().drop_duplicates().sort_values().tolist()
         default_title = "Toy Story (1995)" if "Toy Story (1995)" in movie_list else (movie_list[0] if movie_list else "")
-        selected_title = st.selectbox("Pick a movie:", movie_list, index=(movie_list.index(default_title) if default_title in movie_list else 0))
+        default_index = movie_list.index(default_title) if default_title in movie_list else 0
+        selected_title = st.selectbox("Pick a movie:", movie_list, index=default_index)
         top_n = st.slider("Number of recommendations:", min_value=5, max_value=20, value=10, step=1)
 
         if st.button("Recommend (Content-Based)"):
