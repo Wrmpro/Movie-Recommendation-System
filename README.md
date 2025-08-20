@@ -74,6 +74,12 @@ The app will:
   - Enter a user ID between 1 and 610 (MovieLens small dataset).
   - Get top-N recommendations predicted for that user.
 
+---
+## 🌐 Live Demo
+
+👉 [Try the Streamlit App](https://your-app-link.streamlit.app)
+
+---
 ## 📦 Dataset
 - MovieLens Latest Small (ml-latest-small)
 - Source: https://files.grouplens.org/datasets/movielens/
@@ -92,11 +98,12 @@ You can adjust:
 - Evaluation scripts (precision@k, MAP, NDCG)
 - Dockerfile for containerized runs
 
-## 🤝 Contributing
-Contributions, issues, and feature requests are welcome! Feel free to submit a PR or open an issue.
 
 ## 📄 License
-This project is for educational purposes. You can adapt it as needed. Add a LICENSE file (e.g., MIT) if you plan to distribute.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+This project is licensed under the **MIT License**.
 
 ## 🙌 Acknowledgments
 - MovieLens dataset by GroupLens
